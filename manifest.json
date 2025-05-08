@@ -1,0 +1,20 @@
+{
+  "name": "Figma to LaunchDarkly",
+  "id": "figma-to-launchdarkly",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["https://*.launchdarkly.com"],
+    "devAllowedDomains": ["http://localhost:3002"],
+    "reasoning": "This plugin needs to communicate with a local development server for testing and with LaunchDarkly's API for feature flag management."
+  },
+  "permissions": ["currentuser"],
+  "menu": [
+    {
+      "name": "Export to LaunchDarkly",
+      "command": "export-to-launchdarkly"
+    }
+  ]
+} 

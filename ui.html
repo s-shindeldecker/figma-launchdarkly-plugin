@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: Inter, sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    label {
+      font-weight: 500;
+      font-size: 12px;
+    }
+    
+    input {
+      padding: 8px;
+      border: 1px solid #e5e5e5;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    button {
+      background: #18A0FB;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background: #0D8DE3;
+    }
+    
+    .variants-list {
+      margin-top: 16px;
+    }
+    
+    .variant-item {
+      padding: 8px;
+      border: 1px solid #e5e5e5;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+    
+    .debug-section {
+      margin-top: 20px;
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .debug-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    
+    .debug-log {
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    
+    .error {
+      color: #d32f2f;
+    }
+    
+    .success {
+      color: #2e7d32;
+    }
+    
+    .help-text {
+      font-size: 11px;
+      color: #666;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="input-group">
+      <label for="apiKey">LaunchDarkly API Key</label>
+      <input type="password" id="apiKey" placeholder="api-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+      <div class="help-text">Copy your API key from LaunchDarkly Account Settings > Authorization. The key should start with "api-".</div>
+    </div>
+    
+    <div class="input-group">
+      <label for="projectKey">Project Key</label>
+      <input type="text" id="projectKey" placeholder="Enter project key">
+    </div>
+    
+    <div class="input-group">
+      <label for="environment">Environment</label>
+      <input type="text" id="environment" placeholder="Enter environment">
+    </div>
+    
+    <button id="export">Export to LaunchDarkly</button>
+    
+    <div id="variantsList" class="variants-list"></div>
+    
+    <div class="debug-toggle">
+      <input type="checkbox" id="debugMode">
+      <label for="debugMode">Enable Debug Mode</label>
+    </div>
+    
+    <div id="debugSection" class="debug-section" style="display: none;">
+      <div id="debugLog" class="debug-log"></div>
+    </div>
+  </div>
+
+  <script>
+    const debugLog = document.getElementById('debugLog');
+    const debugSection = document.getElementById('debugSection');
+    const debugMode = document.getElementById('debugMode');
+    
+    function log(message, type = 'info') {
+      if (!debugMode.checked) return;
+      
+      const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+      const logEntry = document.createElement('div');
+      logEntry.className = type;
+      logEntry.textContent = `[${timestamp}] ${message}`;
+      debugLog.appendChild(logEntry);
+      debugLog.scrollTop = debugLog.scrollHeight;
+    }
+    
+    debugMode.onchange = () => {
+      debugSection.style.display = debugMode.checked ? 'block' : 'none';
+      if (debugMode.checked) {
+        log('Debug mode enabled');
+        document.getElementById('apiKey').value = 'api-1851c475-3074-43d7-9600-f62676028cc2';
+        document.getElementById('projectKey').value = 'launch-healthy';
+        document.getElementById('environment').value = 'production';
+      } else {
+        document.getElementById('apiKey').value = '';
+        document.getElementById('projectKey').value = '';
+        document.getElementById('environment').value = '';
+      }
+    };
+
+    document.getElementById('export').onclick = () => {
+      const apiKey = document.getElementById('apiKey').value;
+      const projectKey = document.getElementById('projectKey').value;
+      const environment = document.getElementById('environment').value;
+      
+      if (!apiKey || !projectKey || !environment) {
+        log('Error: Please fill in all fields', 'error');
+        alert('Please fill in all fields');
+        return;
+      }
+      
+      log('Sending export request to Figma...');
+      parent.postMessage({ 
+        pluginMessage: { 
+          type: 'export-to-launchdarkly',
+          config: { apiKey, projectKey, environment }
+        }
+      }, '*');
+    };
+
+    onmessage = (event) => {
+      const message = event.data.pluginMessage;
+      
+      if (message.type === 'process-component') {
+        const { name, variants } = message.data;
+        log(`Processing component: ${name}`);
+        log(`Found ${variants.length} variants`);
+        
+        const variantsList = document.getElementById('variantsList');
+        variantsList.innerHTML = `
+          <h3>${name}</h3>
+          ${variants.map(variant => `
+            <div class="variant-item">
+              <strong>${variant.name}</strong>
+              <p>${variant.description || 'No description'}</p>
+            </div>
+          `).join('')}
+        `;
+      } else if (message.type === 'debug') {
+        log(message.message, message.level || 'info');
+      }
+    };
+  </script>
+</body>
+</html> 

@@ -44,15 +44,15 @@ class LaunchDarklyService {
             // Ensure variants is an array and has at least one item
             const variations = Array.isArray(variants) && variants.length > 0 
                 ? variants.map((variant, index) => ({
-                    value: variant.properties || { enabled: true },
+                    value: { enabled: true, variant: index },
                     name: variant.name || `Variation ${index + 1}`
                 }))
-                : [{ value: { enabled: true }, name: 'On' }];
+                : [{ value: { enabled: true, variant: 0 }, name: 'On' }];
 
             // If we only have one variation, add an "Off" variation
             if (variations.length === 1) {
                 variations.push({
-                    value: { enabled: false },
+                    value: { enabled: false, variant: 1 },
                     name: 'Off'
                 });
             }
@@ -196,14 +196,12 @@ figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
                 figma.ui.postMessage({
                     type: 'debug',
                     level: 'error',
-                    message: 'No component selected'
+                    message: 'No components selected'
                 });
-                figma.notify('Please select a component or component set. You can find these in your Assets panel (left sidebar).');
+                figma.notify('Please select at least one component. You can find these in your Assets panel (left sidebar).');
                 return;
             }
 
-            const selectedNode = selection[0];
-            
             // Function to find components in a node
             const findComponents = (node) => {
                 if (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') {
@@ -215,106 +213,84 @@ figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
                 return [];
             };
 
-            // If the selection is a frame, look for components inside it
-            let components = [];
-            if (selectedNode.type === 'FRAME') {
-                components = findComponents(selectedNode);
-                if (components.length === 0) {
-                    figma.ui.postMessage({
-                        type: 'debug',
-                        level: 'error',
-                        message: 'No components found in the selected frame'
-                    });
-                    figma.notify('No components found in the selected frame. Please select a component or component set directly.');
-                    return;
+            // Collect all components from the selection
+            let allComponents = [];
+            for (const node of selection) {
+                if (node.type === 'FRAME') {
+                    const frameComponents = findComponents(node);
+                    allComponents = allComponents.concat(frameComponents);
+                } else if (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') {
+                    allComponents.push(node);
                 }
-                figma.ui.postMessage({
-                    type: 'debug',
-                    level: 'info',
-                    message: `Found ${components.length} components in the selected frame`
-                });
-            } else if (selectedNode.type === 'COMPONENT' || selectedNode.type === 'COMPONENT_SET') {
-                components = [selectedNode];
-            } else {
+            }
+
+            if (allComponents.length === 0) {
                 figma.ui.postMessage({
                     type: 'debug',
                     level: 'error',
-                    message: `Invalid selection type: ${selectedNode.type}. Please select a component, component set, or a frame containing components.`
+                    message: 'No valid components found in selection'
                 });
-                figma.notify('Please select a component, component set, or a frame containing components.');
+                figma.notify('Please select at least one component or component set.');
                 return;
             }
 
-            // Process each component
-            for (const component of components) {
-                const componentName = component.name;
-                const variants = component.type === 'COMPONENT_SET' ? component.children || [] : [component];
+            figma.ui.postMessage({
+                type: 'debug',
+                level: 'info',
+                message: `Found ${allComponents.length} components in selection`
+            });
 
-                figma.ui.postMessage({
-                    type: 'debug',
-                    level: 'info',
-                    message: `Processing component: ${componentName}\nType: ${component.type}\nVariants: ${variants.length}`
-                });
+            // Group components by their parent name or use the first component's name as the base
+            const baseName = allComponents[0].name.split('--')[0].trim();
+            const variantsData = allComponents.map(component => ({
+                name: component.name,
+                description: component.description || '',
+                properties: component.properties || {}
+            }));
 
-                // Prepare variants data
-                const variantsData = variants.map(variant => ({
-                    name: variant.name,
-                    description: variant.description || '',
-                    properties: variant.properties || {}
-                }));
+            // Initialize LaunchDarkly service with config
+            const launchDarklyService = new LaunchDarklyService(msg.config.apiKey);
 
-                // Initialize LaunchDarkly service with config
-                const launchDarklyService = new LaunchDarklyService(msg.config.apiKey);
+            // Create a single feature flag with all variants
+            figma.ui.postMessage({
+                type: 'debug',
+                level: 'info',
+                message: `Creating feature flag for components with base name: ${baseName}`
+            });
 
-                // Create feature flag
-                figma.ui.postMessage({
-                    type: 'debug',
-                    level: 'info',
-                    message: `Creating feature flag for component: ${componentName}`
-                });
+            const featureFlag = yield launchDarklyService.createFeatureFlag(
+                baseName,
+                baseName,
+                `Feature flag for ${baseName} components`,
+                variantsData
+            );
+            
+            // Create a single metric for the feature flag
+            figma.ui.postMessage({
+                type: 'debug',
+                level: 'info',
+                message: `Creating metric for feature flag: ${baseName}`
+            });
+            yield launchDarklyService.createMetric(baseName, baseName);
 
-                const featureFlag = yield launchDarklyService.createFeatureFlag(
-                    componentName,
-                    componentName,
-                    `Feature flag for ${componentName} component`,
-                    variantsData
-                );
-                
-                // Create metrics for each variant
-                for (const variant of variantsData) {
-                    figma.ui.postMessage({
-                        type: 'debug',
-                        level: 'info',
-                        message: `Creating metric for variant: ${variant.name}`
-                    });
-                    yield launchDarklyService.createMetric(componentName, variant.name);
-                }
+            // Generate code for the feature flag
+            const code = generateFeatureFlagCode(baseName, variantsData);
+            
+            figma.ui.postMessage({
+                type: 'debug',
+                level: 'success',
+                message: `Successfully exported components to LaunchDarkly\nCreated feature flag "${baseName}" with ${variantsData.length} variations`
+            });
 
-                figma.ui.postMessage({
-                    type: 'debug',
-                    level: 'success',
-                    message: `Successfully exported component "${componentName}" to LaunchDarkly\nCreated feature flag and ${variantsData.length} metrics`
-                });
-
-                figma.notify(`Successfully exported "${componentName}" to LaunchDarkly`);
-            }
+            figma.notify(`Successfully exported "${baseName}" to LaunchDarkly`);
 
             // Send to UI for display
             figma.ui.postMessage({
                 type: 'process-component',
                 data: {
-                    name: components[0].name,
-                    variants: components[0].type === 'COMPONENT_SET' ? 
-                        components[0].children.map(v => ({
-                            name: v.name,
-                            description: v.description || '',
-                            properties: v.properties || {}
-                        })) : 
-                        [{
-                            name: components[0].name,
-                            description: components[0].description || '',
-                            properties: components[0].properties || {}
-                        }]
+                    name: baseName,
+                    variants: variantsData,
+                    code: code
                 }
             });
         }
@@ -323,9 +299,48 @@ figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
             figma.ui.postMessage({
                 type: 'debug',
                 level: 'error',
-                message: `Error processing component: ${errorMessage}`
+                message: `Error processing components: ${errorMessage}`
             });
-            figma.notify('Error processing component: ' + errorMessage);
+            figma.notify('Error processing components: ' + errorMessage);
         }
     }
 });
+
+// Function to generate React code for the feature flag
+function generateFeatureFlagCode(flagName, variants) {
+    const sanitizedFlagName = flagName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const sanitizedVariants = variants.map(v => v.name.toLowerCase().replace(/[^a-z0-9]/g, '-'));
+    
+    return `import React from 'react';
+import { useLDClient } from 'launchdarkly-react-client-sdk';
+
+export const ${sanitizedFlagName} = () => {
+    const ldClient = useLDClient();
+    const [variation, setVariation] = React.useState(null);
+
+    React.useEffect(() => {
+        // Get the feature flag variation
+        const flagValue = ldClient.variation('${sanitizedFlagName}', null);
+        setVariation(flagValue);
+
+        // Track the metric when the component is shown
+        ldClient.track('${sanitizedFlagName}');
+
+        // Listen for changes to the feature flag
+        ldClient.on('change', (changes) => {
+            if (changes['${sanitizedFlagName}']) {
+                setVariation(changes['${sanitizedFlagName}'].current);
+            }
+        });
+    }, [ldClient]);
+
+    // Render the appropriate variant
+    switch (variation) {
+        ${variants.map((variant, index) => `
+        case '${sanitizedVariants[index]}':
+            return <${variant.name.replace(/[^a-zA-Z0-9]/g, '')} />;`).join('\n')}
+        default:
+            return null;
+    }
+};`;
+}

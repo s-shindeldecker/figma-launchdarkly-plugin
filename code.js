@@ -240,59 +240,155 @@ figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
                 message: `Found ${allComponents.length} components in selection`
             });
 
-            // Group components by their parent name or use the first component's name as the base
-            const baseName = allComponents[0].name.split('--')[0].trim();
-            const variantsData = allComponents.map(component => ({
-                name: component.name,
-                description: component.description || '',
-                properties: component.properties || {}
-            }));
+            // Process each component set
+            for (const component of allComponents) {
+                if (component.type === 'COMPONENT_SET') {
+                    // Get all variants from the component set
+                    const variants = component.children || [];
+                    const baseName = component.name;
+                    
+                    // Prepare variants data with proper variant properties
+                    const variantsData = variants.map(variant => {
+                        // Get variant properties
+                        const variantProperties = {};
+                        if (variant.variantProperties) {
+                            Object.entries(variant.variantProperties).forEach(([key, value]) => {
+                                variantProperties[key] = value;
+                            });
+                        }
+                        
+                        // Create a user-friendly name for the variant
+                        let variantName = variant.name;
+                        
+                        // If the name contains property values (e.g., "Property 1=Default"), clean it up
+                        if (variantName.includes('=')) {
+                            // Split by '=' and take the value part
+                            const parts = variantName.split('=');
+                            if (parts.length > 1) {
+                                // Clean up the value part
+                                variantName = parts[1]
+                                    .replace(/^Default$/, 'Control') // Replace "Default" with "Control"
+                                    .replace(/^Variant$/, 'Treatment') // Replace "Variant" with "Treatment"
+                                    .replace(/^[A-Z]/, (match) => match.toLowerCase()) // Convert first letter to lowercase
+                                    .replace(/\s+/g, '') // Remove spaces
+                                    .replace(/[^a-zA-Z0-9]/g, '') // Remove special characters
+                                    .replace(/^([a-z])/, (match) => match.toUpperCase()); // Capitalize first letter
+                            }
+                        }
+                        
+                        // If the name is still not user-friendly, create one based on the index
+                        if (!variantName || variantName === 'Default' || variantName === 'Variant') {
+                            variantName = variant === variants[0] ? 'Control' : `Treatment${variants.indexOf(variant)}`;
+                        }
+                        
+                        return {
+                            name: variantName,
+                            description: variant.description || `Variant of ${baseName}`,
+                            properties: variantProperties
+                        };
+                    });
 
-            // Initialize LaunchDarkly service with config
-            const launchDarklyService = new LaunchDarklyService(msg.config.apiKey);
+                    // Initialize LaunchDarkly service with config
+                    const launchDarklyService = new LaunchDarklyService(msg.config.apiKey);
 
-            // Create a single feature flag with all variants
-            figma.ui.postMessage({
-                type: 'debug',
-                level: 'info',
-                message: `Creating feature flag for components with base name: ${baseName}`
-            });
+                    // Create a single feature flag with all variants
+                    figma.ui.postMessage({
+                        type: 'debug',
+                        level: 'info',
+                        message: `Creating feature flag for component set: ${baseName}`
+                    });
 
-            const featureFlag = yield launchDarklyService.createFeatureFlag(
-                baseName,
-                baseName,
-                `Feature flag for ${baseName} components`,
-                variantsData
-            );
-            
-            // Create a single metric for the feature flag
-            figma.ui.postMessage({
-                type: 'debug',
-                level: 'info',
-                message: `Creating metric for feature flag: ${baseName}`
-            });
-            yield launchDarklyService.createMetric(baseName, baseName);
+                    const featureFlag = yield launchDarklyService.createFeatureFlag(
+                        baseName,
+                        baseName,
+                        `Feature flag for ${baseName} component set`,
+                        variantsData
+                    );
+                    
+                    // Create a single metric for the feature flag
+                    figma.ui.postMessage({
+                        type: 'debug',
+                        level: 'info',
+                        message: `Creating metric for feature flag: ${baseName}`
+                    });
+                    yield launchDarklyService.createMetric(baseName, baseName);
 
-            // Generate code for the feature flag
-            const code = generateFeatureFlagCode(baseName, variantsData);
-            
-            figma.ui.postMessage({
-                type: 'debug',
-                level: 'success',
-                message: `Successfully exported components to LaunchDarkly\nCreated feature flag "${baseName}" with ${variantsData.length} variations`
-            });
+                    // Generate code for the feature flag
+                    const code = generateFeatureFlagCode(baseName, variantsData);
+                    
+                    figma.ui.postMessage({
+                        type: 'debug',
+                        level: 'success',
+                        message: `Successfully exported component set to LaunchDarkly\nCreated feature flag "${baseName}" with ${variantsData.length} variations`
+                    });
 
-            figma.notify(`Successfully exported "${baseName}" to LaunchDarkly`);
+                    figma.notify(`Successfully exported "${baseName}" to LaunchDarkly`);
 
-            // Send to UI for display
-            figma.ui.postMessage({
-                type: 'process-component',
-                data: {
-                    name: baseName,
-                    variants: variantsData,
-                    code: code
+                    // Send to UI for display
+                    figma.ui.postMessage({
+                        type: 'process-component',
+                        data: {
+                            name: baseName,
+                            variants: variantsData,
+                            code: code
+                        }
+                    });
+                } else {
+                    // Handle single component (no variants)
+                    const baseName = component.name;
+                    const variantsData = [{
+                        name: 'Default',
+                        description: component.description || '',
+                        properties: {}
+                    }];
+
+                    // Initialize LaunchDarkly service with config
+                    const launchDarklyService = new LaunchDarklyService(msg.config.apiKey);
+
+                    // Create feature flag
+                    figma.ui.postMessage({
+                        type: 'debug',
+                        level: 'info',
+                        message: `Creating feature flag for component: ${baseName}`
+                    });
+
+                    const featureFlag = yield launchDarklyService.createFeatureFlag(
+                        baseName,
+                        baseName,
+                        `Feature flag for ${baseName} component`,
+                        variantsData
+                    );
+                    
+                    // Create metric
+                    figma.ui.postMessage({
+                        type: 'debug',
+                        level: 'info',
+                        message: `Creating metric for feature flag: ${baseName}`
+                    });
+                    yield launchDarklyService.createMetric(baseName, baseName);
+
+                    // Generate code
+                    const code = generateFeatureFlagCode(baseName, variantsData);
+                    
+                    figma.ui.postMessage({
+                        type: 'debug',
+                        level: 'success',
+                        message: `Successfully exported component to LaunchDarkly\nCreated feature flag "${baseName}"`
+                    });
+
+                    figma.notify(`Successfully exported "${baseName}" to LaunchDarkly`);
+
+                    // Send to UI
+                    figma.ui.postMessage({
+                        type: 'process-component',
+                        data: {
+                            name: baseName,
+                            variants: variantsData,
+                            code: code
+                        }
+                    });
                 }
-            });
+            }
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';

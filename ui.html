@@ -58,6 +58,57 @@
       margin-bottom: 8px;
     }
     
+    .code-section {
+      margin-top: 20px;
+      border: 1px solid #e5e5e5;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: #f5f5f5;
+      border-bottom: 1px solid #e5e5e5;
+    }
+    
+    .code-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .code-button {
+      background: #18A0FB;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    
+    .code-button:hover {
+      background: #0D8DE3;
+    }
+    
+    .code-content {
+      padding: 12px;
+      background: #f8f8f8;
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .code-filename {
+      font-weight: 500;
+      font-size: 14px;
+    }
+    
     .debug-section {
       margin-top: 20px;
       padding: 12px;
@@ -117,6 +168,17 @@
     <button id="export">Export to LaunchDarkly</button>
     
     <div id="variantsList" class="variants-list"></div>
+    
+    <div id="codeSection" class="code-section" style="display: none;">
+      <div class="code-header">
+        <span class="code-filename">Generated Code</span>
+        <div class="code-actions">
+          <button class="code-button" id="copyCode">Copy Code</button>
+          <button class="code-button" id="downloadCode">Download</button>
+        </div>
+      </div>
+      <pre class="code-content" id="codeContent"></pre>
+    </div>
     
     <div class="debug-toggle">
       <input type="checkbox" id="debugMode">
@@ -182,7 +244,7 @@
       const message = event.data.pluginMessage;
       
       if (message.type === 'process-component') {
-        const { name, variants } = message.data;
+        const { name, variants, code } = message.data;
         log(`Processing component: ${name}`);
         log(`Found ${variants.length} variants`);
         
@@ -196,9 +258,40 @@
             </div>
           `).join('')}
         `;
+
+        // Show and populate code section
+        const codeSection = document.getElementById('codeSection');
+        const codeContent = document.getElementById('codeContent');
+        codeSection.style.display = 'block';
+        codeContent.textContent = code;
       } else if (message.type === 'debug') {
         log(message.message, message.level || 'info');
       }
+    };
+
+    // Add copy code functionality
+    document.getElementById('copyCode').onclick = () => {
+      const codeContent = document.getElementById('codeContent');
+      navigator.clipboard.writeText(codeContent.textContent).then(() => {
+        log('Code copied to clipboard', 'success');
+      }).catch(err => {
+        log('Failed to copy code: ' + err.message, 'error');
+      });
+    };
+
+    // Add download code functionality
+    document.getElementById('downloadCode').onclick = () => {
+      const codeContent = document.getElementById('codeContent');
+      const blob = new Blob([codeContent.textContent], { type: 'text/javascript' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'feature-flag-component.js';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      log('Code downloaded', 'success');
     };
   </script>
 </body>

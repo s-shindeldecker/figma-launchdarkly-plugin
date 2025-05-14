@@ -1,0 +1,16 @@
+{
+  "name": "figma-to-launchdarkly",
+  "version": "1.0.0",
+  "description": "Figma plugin to export components to LaunchDarkly",
+  "main": "code.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "watch": "tsc -p tsconfig.json --watch"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.111.0",
+    "typescript": "^4.9.5"
+  }
+} 

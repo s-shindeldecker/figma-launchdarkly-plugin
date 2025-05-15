@@ -16,9 +16,9 @@ app.use((req, res, next) => {
 
 // Middleware
 app.use(cors({
-    origin: ['https://www.figma.com', 'https://app.launchdarkly.com', 'null'],
+    origin: ['https://www.figma.com', 'http://localhost:3002', 'null'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'LD-API-Version', 'LD-Account-ID', 'Origin'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin'],
     credentials: true,
     maxAge: 86400 // 24 hours
 }));
@@ -34,7 +34,7 @@ const LAUNCHDARKLY_ACCOUNT_ID = '1851c475';
 const LAUNCHDARKLY_PROJECT_KEY = 'launch-healthy';
 
 // Helper function to make LaunchDarkly API calls
-async function makeLaunchDarklyRequest(endpoint, method, body) {
+async function makeLaunchDarklyRequest(endpoint, method, body, apiKey, options = {}) {
     try {
         console.log(`Making request to LaunchDarkly API: ${endpoint}`);
         console.log('Request body:', JSON.stringify(body, null, 2));
@@ -45,13 +45,13 @@ async function makeLaunchDarklyRequest(endpoint, method, body) {
         const response = await fetch(url, {
             method,
             headers: {
-                'Authorization': LAUNCHDARKLY_API_KEY,
+                'Authorization': apiKey,
                 'LD-API-Version': '20220603',
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'LD-Account-ID': LAUNCHDARKLY_ACCOUNT_ID
+                'Accept': 'application/json'
             },
-            body: body ? JSON.stringify(body) : undefined
+            body: body ? JSON.stringify(body) : undefined,
+            ...options
         });
 
         console.log('Response status:', response.status);
@@ -94,10 +94,16 @@ app.post('/api/flags', async (req, res) => {
         console.log('Request headers:', JSON.stringify(req.headers, null, 2));
         console.log('Request body:', JSON.stringify(req.body, null, 2));
 
+        const apiKey = req.headers.authorization;
+        if (!apiKey) {
+            throw new Error('API key is required');
+        }
+
         const response = await makeLaunchDarklyRequest(
             `flags/${LAUNCHDARKLY_PROJECT_KEY}`,
             'POST',
-            req.body
+            req.body,
+            apiKey
         );
         res.json(response);
     } catch (error) {
@@ -121,18 +127,24 @@ app.post('/api/metrics', async (req, res) => {
         console.log('Request headers:', JSON.stringify(req.headers, null, 2));
         console.log('Request body:', JSON.stringify(req.body, null, 2));
 
+        const apiKey = req.headers.authorization;
+        if (!apiKey) {
+            throw new Error('API key is required');
+        }
+
         const response = await makeLaunchDarklyRequest(
             `metrics/${LAUNCHDARKLY_PROJECT_KEY}`,
             'POST',
-            req.body
+            req.body,
+            apiKey
         );
         res.json(response);
     } catch (error) {
         console.error('Error creating metric:', error);
         console.error('Error stack:', error.stack);
+        
         res.status(500).json({ 
             error: error.message,
-            details: error.stack,
             type: error.constructor.name
         });
     }
@@ -141,6 +153,95 @@ app.post('/api/metrics', async (req, res) => {
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
+});
+
+// Get projects endpoint
+app.get('/api/projects', async (req, res) => {
+    try {
+        console.log('Received request to fetch projects');
+        console.log('Request headers:', JSON.stringify(req.headers, null, 2));
+
+        const apiKey = req.headers.authorization;
+        if (!apiKey) {
+            throw new Error('API key is required');
+        }
+
+        // Add timeout to the request
+        const controller = new AbortController();
+        const timeout = setTimeout(() => {
+            controller.abort();
+        }, 10000); // 10 second timeout
+
+        try {
+            const response = await makeLaunchDarklyRequest(
+                'projects',
+                'GET',
+                null,
+                apiKey,
+                { signal: controller.signal }
+            );
+            clearTimeout(timeout);
+
+            // Transform the response to match UI expectations
+            const transformedResponse = {
+                items: response.items.map(project => ({
+                    key: project.key,
+                    name: project.name,
+                    description: project.description || '',
+                    tags: project.tags || []
+                }))
+            };
+
+            res.json(transformedResponse);
+        } catch (error) {
+            clearTimeout(timeout);
+            if (error.name === 'AbortError') {
+                throw new Error('Request timed out while fetching projects');
+            }
+            throw error;
+        }
+    } catch (error) {
+        console.error('Error fetching projects:', error);
+        console.error('Error stack:', error.stack);
+        
+        // Set appropriate status code based on error type
+        const statusCode = error.message.includes('timed out') ? 504 : 500;
+        
+        res.status(statusCode).json({ 
+            error: error.message,
+            type: error.constructor.name
+        });
+    }
+});
+
+// Get environments endpoint
+app.get('/api/projects/:projectKey/environments', async (req, res) => {
+    try {
+        console.log('Received request to fetch environments');
+        console.log('Request headers:', JSON.stringify(req.headers, null, 2));
+        console.log('Project key:', req.params.projectKey);
+
+        const apiKey = req.headers.authorization;
+        if (!apiKey) {
+            throw new Error('API key is required');
+        }
+
+        const response = await makeLaunchDarklyRequest(
+            `projects/${req.params.projectKey}/environments`,
+            'GET',
+            null,
+            apiKey
+        );
+        res.json(response);
+    } catch (error) {
+        console.error('Error fetching environments:', error);
+        console.error('Error stack:', error.stack);
+        
+        res.status(500).json({ 
+            error: error.message,
+            type: error.constructor.name
+        });
+    }
 });
 
 // Error handling middleware
@@ -163,21 +264,42 @@ app.use((req, res) => {
     });
 });
 
-// Add process error handlers
-process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
-    console.error('Stack:', err.stack);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise);
-    console.error('Reason:', reason);
-});
-
-app.listen(port, () => {
+// Create the server instance first
+const server = app.listen(port, () => {
     console.log(`[${new Date().toISOString()}] Server running at http://localhost:${port}`);
     console.log('LaunchDarkly configuration:');
     console.log('- API Key:', LAUNCHDARKLY_API_KEY);
     console.log('- Account ID:', LAUNCHDARKLY_ACCOUNT_ID);
     console.log('- Project Key:', LAUNCHDARKLY_PROJECT_KEY);
+});
+
+// Add process error handlers
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+    console.error('Stack:', err.stack);
+    // Don't exit the process
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise);
+    console.error('Reason:', reason);
+    // Don't exit the process
+});
+
+// Handle SIGTERM gracefully
+process.on('SIGTERM', () => {
+    console.log('Received SIGTERM. Performing graceful shutdown...');
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
+});
+
+// Handle SIGINT gracefully
+process.on('SIGINT', () => {
+    console.log('Received SIGINT. Performing graceful shutdown...');
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
 }); 

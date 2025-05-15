@@ -21,6 +21,19 @@
       gap: 8px;
     }
     
+    .input-with-button {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .input-with-button input {
+      flex: 1;
+    }
+    
+    .input-with-button button {
+      white-space: nowrap;
+    }
+    
     label {
       font-weight: 500;
       font-size: 12px;
@@ -118,6 +131,7 @@
       font-size: 12px;
       max-height: 200px;
       overflow-y: auto;
+      border: 1px solid #e0e0e0;
     }
     
     .debug-toggle {
@@ -130,6 +144,32 @@
     .debug-log {
       white-space: pre-wrap;
       word-break: break-all;
+    }
+    
+    .debug-entry {
+      margin: 4px 0;
+      padding: 4px;
+      border-radius: 2px;
+    }
+    
+    .debug-entry.error {
+      color: #d32f2f;
+      background: #ffebee;
+    }
+    
+    .debug-entry.warning {
+      color: #f57c00;
+      background: #fff3e0;
+    }
+    
+    .debug-entry.info {
+      color: #1976d2;
+      background: #e3f2fd;
+    }
+    
+    .debug-entry.success {
+      color: #2e7d32;
+      background: #e8f5e9;
     }
     
     .error {
@@ -145,27 +185,225 @@
       color: #666;
       margin-top: 4px;
     }
+    
+    select {
+      padding: 8px;
+      border: 1px solid #e5e5e5;
+      border-radius: 4px;
+      font-size: 14px;
+      background-color: white;
+      width: 100%;
+    }
+    
+    .loading {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    
+    .status-message {
+      font-size: 12px;
+      margin-top: 4px;
+      color: #666;
+      padding: 8px;
+      border-radius: 4px;
+      background: #f5f5f5;
+      border-left: 4px solid #666;
+    }
+    
+    .success-message {
+      color: #2e7d32;
+      background: #e8f5e9;
+      border-left-color: #2e7d32;
+    }
+    
+    .error-message {
+      color: #d32f2f;
+      background: #ffebee;
+      border-left-color: #d32f2f;
+    }
+    
+    .warning-message {
+      color: #f57c00;
+      background: #fff3e0;
+      border-left-color: #f57c00;
+    }
+    
+    .confirmation-dialog {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 32px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+        max-width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        width: 600px;
+    }
+
+    .confirmation-dialog h3 {
+        margin: 0 0 24px 0;
+        color: #333;
+        font-size: 20px;
+        font-weight: 600;
+    }
+
+    .confirmation-dialog p {
+        margin: 0 0 24px 0;
+        color: #666;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .confirmation-dialog .details {
+        background: #f5f5f5;
+        padding: 16px;
+        border-radius: 8px;
+        margin: 16px 0;
+        white-space: pre-line;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .confirmation-dialog .preview {
+        margin: 24px 0;
+        padding: 16px;
+        background: #f8f8f8;
+        border-radius: 8px;
+    }
+
+    .confirmation-dialog .preview-item {
+        margin: 16px 0;
+        padding: 16px;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #eee;
+    }
+
+    .confirmation-dialog .preview-item strong {
+        display: block;
+        margin-bottom: 12px;
+        font-size: 16px;
+        color: #333;
+    }
+
+    .confirmation-dialog .variant-list {
+        margin-left: 24px;
+        margin-top: 12px;
+        margin-bottom: 16px;
+    }
+
+    .confirmation-dialog .variant-item {
+        color: #666;
+        margin: 8px 0;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .confirmation-dialog .metrics-list {
+        margin-left: 24px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #eee;
+    }
+
+    .confirmation-dialog .metric-item {
+        color: #666;
+        margin: 8px 0;
+        font-size: 14px;
+        line-height: 1.5;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .confirmation-dialog .metric-checkbox {
+        margin: 0;
+    }
+
+    .confirmation-dialog .metric-label {
+        flex: 1;
+    }
+
+    .confirmation-dialog .button-group {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .confirmation-dialog .button {
+        padding: 12px 24px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 14px;
+        transition: background-color 0.2s;
+    }
+
+    .confirmation-dialog .button.primary {
+        background: #18A0FB;
+        color: white;
+    }
+
+    .confirmation-dialog .button.primary:hover {
+        background: #0D8DE3;
+    }
+
+    .confirmation-dialog .button.secondary {
+        background: #f5f5f5;
+        color: #333;
+    }
+
+    .confirmation-dialog .button.secondary:hover {
+        background: #e5e5e5;
+    }
+
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        backdrop-filter: blur(2px);
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="input-group">
       <label for="apiKey">LaunchDarkly API Key</label>
-      <input type="password" id="apiKey" placeholder="api-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+      <div class="input-with-button">
+        <input type="password" id="apiKey" placeholder="api-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+        <button id="submitApiKey">Submit</button>
+      </div>
       <div class="help-text">Copy your API key from LaunchDarkly Account Settings > Authorization. The key should start with "api-".</div>
+      <div id="apiKeyStatus" class="status-message"></div>
     </div>
     
     <div class="input-group">
-      <label for="projectKey">Project Key</label>
-      <input type="text" id="projectKey" placeholder="Enter project key">
+      <label for="projectKey">Project</label>
+      <select id="projectKey" disabled>
+        <option value="">Select a project...</option>
+      </select>
+      <div id="projectStatus" class="status-message"></div>
     </div>
     
     <div class="input-group">
       <label for="environment">Environment</label>
-      <input type="text" id="environment" placeholder="Enter environment">
+      <select id="environment" disabled>
+        <option value="">Select an environment...</option>
+      </select>
+      <div id="environmentStatus" class="status-message"></div>
     </div>
     
-    <button id="export">Export to LaunchDarkly</button>
+    <button id="export" disabled>Export to LaunchDarkly</button>
     
     <div id="variantsList" class="variants-list"></div>
     
@@ -190,40 +428,137 @@
     </div>
   </div>
 
+  <div id="confirmationDialog" style="display: none;">
+    <div class="overlay"></div>
+    <div class="confirmation-dialog">
+        <h3 id="confirmationTitle"></h3>
+        <p id="confirmationMessage"></p>
+        <div id="confirmationDetails" class="details"></div>
+        <div id="exportPreview" class="preview"></div>
+        <div class="button-group">
+            <button class="button secondary" onclick="cancelExport()">Cancel</button>
+            <button class="button primary" onclick="confirmExport()">Confirm Export</button>
+        </div>
+    </div>
+  </div>
+
   <script>
     const debugLog = document.getElementById('debugLog');
     const debugSection = document.getElementById('debugSection');
     const debugMode = document.getElementById('debugMode');
+    const apiKeyInput = document.getElementById('apiKey');
+    const projectSelect = document.getElementById('projectKey');
+    const environmentSelect = document.getElementById('environment');
+    const exportButton = document.getElementById('export');
+    
+    // Load saved API key on startup
+    parent.postMessage({ 
+      pluginMessage: { 
+        type: 'load-config'
+      }
+    }, '*');
+    
+    function updateUIState(isLoading = false) {
+      const hasApiKey = apiKeyInput.value.trim() !== '';
+      projectSelect.disabled = isLoading || !hasApiKey;
+      environmentSelect.disabled = isLoading || !hasApiKey;
+      exportButton.disabled = isLoading || !hasApiKey || !projectSelect.value || !environmentSelect.value;
+    }
+    
+    function showStatus(elementId, message, type = 'info') {
+      const element = document.getElementById(elementId);
+      element.textContent = message;
+      element.className = `status-message ${type}-message`;
+      
+      // Log to debug section if enabled
+      if (debugMode.checked) {
+        log(message, type);
+      }
+      
+      // Clear the message after 5 seconds if it's a success message
+      if (type === 'success') {
+        setTimeout(() => {
+          element.textContent = '';
+          element.className = 'status-message';
+        }, 5000);
+      }
+    }
     
     function log(message, type = 'info') {
       if (!debugMode.checked) return;
       
       const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
       const logEntry = document.createElement('div');
-      logEntry.className = type;
+      logEntry.className = `debug-entry ${type}`;
       logEntry.textContent = `[${timestamp}] ${message}`;
       debugLog.appendChild(logEntry);
       debugLog.scrollTop = debugLog.scrollHeight;
     }
     
+    // Handle API key changes
+    apiKeyInput.onchange = () => {
+      updateUIState();
+    };
+    
+    // Handle API key submission
+    document.getElementById('submitApiKey').onclick = () => {
+      const apiKey = apiKeyInput.value.trim();
+      if (apiKey) {
+        showStatus('apiKeyStatus', 'Loading projects...', 'info');
+        parent.postMessage({ 
+          pluginMessage: { 
+            type: 'save-config',
+            config: { apiKey }
+          }
+        }, '*');
+        
+        // Fetch projects
+        parent.postMessage({ 
+          pluginMessage: { 
+            type: 'fetch-projects',
+            config: { apiKey }
+          }
+        }, '*');
+      } else {
+        showStatus('apiKeyStatus', 'Please enter a valid LaunchDarkly API key', 'error');
+        updateUIState();
+      }
+    };
+    
+    // Handle project selection
+    projectSelect.onchange = () => {
+      const apiKey = apiKeyInput.value.trim();
+      const projectKey = projectSelect.value;
+      
+      if (projectKey) {
+        showStatus('environmentStatus', 'Loading environments...', 'info');
+        parent.postMessage({ 
+          pluginMessage: { 
+            type: 'fetch-environments',
+            config: { apiKey, projectKey }
+          }
+        }, '*');
+      }
+      
+      updateUIState();
+    };
+    
+    // Handle environment selection
+    environmentSelect.onchange = () => {
+      updateUIState();
+    };
+    
     debugMode.onchange = () => {
       debugSection.style.display = debugMode.checked ? 'block' : 'none';
       if (debugMode.checked) {
         log('Debug mode enabled');
-        document.getElementById('apiKey').value = 'api-1851c475-3074-43d7-9600-f62676028cc2';
-        document.getElementById('projectKey').value = 'launch-healthy';
-        document.getElementById('environment').value = 'production';
-      } else {
-        document.getElementById('apiKey').value = '';
-        document.getElementById('projectKey').value = '';
-        document.getElementById('environment').value = '';
       }
     };
 
     document.getElementById('export').onclick = () => {
-      const apiKey = document.getElementById('apiKey').value;
-      const projectKey = document.getElementById('projectKey').value;
-      const environment = document.getElementById('environment').value;
+      const apiKey = apiKeyInput.value.trim();
+      const projectKey = projectSelect.value;
+      const environment = environmentSelect.value;
       
       if (!apiKey || !projectKey || !environment) {
         log('Error: Please fill in all fields', 'error');
@@ -240,33 +575,82 @@
       }, '*');
     };
 
-    onmessage = (event) => {
-      const message = event.data.pluginMessage;
-      
-      if (message.type === 'process-component') {
-        const { name, variants, code } = message.data;
-        log(`Processing component: ${name}`);
-        log(`Found ${variants.length} variants`);
-        
-        const variantsList = document.getElementById('variantsList');
-        variantsList.innerHTML = `
-          <h3>${name}</h3>
-          ${variants.map(variant => `
-            <div class="variant-item">
-              <strong>${variant.name}</strong>
-              <p>${variant.description || 'No description'}</p>
-            </div>
-          `).join('')}
-        `;
+    // Update the message handler
+    window.onmessage = async (event) => {
+        const msg = event.data.pluginMessage;
+        if (!msg) return;
 
-        // Show and populate code section
-        const codeSection = document.getElementById('codeSection');
-        const codeContent = document.getElementById('codeContent');
-        codeSection.style.display = 'block';
-        codeContent.textContent = code;
-      } else if (message.type === 'debug') {
-        log(message.message, message.level || 'info');
-      }
+        if (msg.type === 'config-loaded') {
+            const { apiKey } = msg.config;
+            if (apiKey) {
+                apiKeyInput.value = apiKey;
+                showStatus('apiKeyStatus', 'Loading projects...', 'info');
+                parent.postMessage({ 
+                    pluginMessage: { 
+                        type: 'fetch-projects',
+                        config: { apiKey }
+                    }
+                }, '*');
+            }
+        } else if (msg.type === 'show-confirmation' || msg.type === 'show-export-preview') {
+            showConfirmationDialog(msg.data);
+        } else if (msg.type === 'debug') {
+            log(msg.message, msg.level || 'info');
+        } else if (msg.type === 'api-error') {
+            showStatus('apiKeyStatus', `API Error: ${msg.message}`, 'error');
+            log(`API Error: ${msg.message}`, 'error');
+        } else if (msg.type === 'projects-loaded') {
+            const { projects } = msg.data;
+            if (projects && projects.length > 0) {
+                projectSelect.innerHTML = '<option value="">Select a project...</option>';
+                projects.forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project.key;
+                    option.textContent = project.name;
+                    projectSelect.appendChild(option);
+                });
+                showStatus('apiKeyStatus', `Successfully loaded ${projects.length} projects`, 'success');
+            } else {
+                showStatus('apiKeyStatus', 'No projects found in your LaunchDarkly account', 'warning');
+            }
+            updateUIState();
+        } else if (msg.type === 'environments-loaded') {
+            const { environments } = msg.data;
+            if (environments && environments.length > 0) {
+                environmentSelect.innerHTML = '<option value="">Select an environment...</option>';
+                environments.forEach(env => {
+                    const option = document.createElement('option');
+                    option.value = env.key;
+                    option.textContent = env.name;
+                    environmentSelect.appendChild(option);
+                });
+                showStatus('environmentStatus', `Successfully loaded ${environments.length} environments`, 'success');
+            } else {
+                showStatus('environmentStatus', 'No environments found for this project', 'warning');
+            }
+            updateUIState();
+        } else if (msg.type === 'process-component') {
+            const { name, variants, code } = msg.data;
+            log(`Processing component: ${name}`);
+            log(`Found ${variants.length} variants`);
+            
+            const variantsList = document.getElementById('variantsList');
+            variantsList.innerHTML = `
+                <h3>${name}</h3>
+                ${variants.map(variant => `
+                    <div class="variant-item">
+                        <strong>${variant.name}</strong>
+                        <p>${variant.description || 'No description'}</p>
+                    </div>
+                `).join('')}
+            `;
+
+            // Show and populate code section
+            const codeSection = document.getElementById('codeSection');
+            const codeContent = document.getElementById('codeContent');
+            codeSection.style.display = 'block';
+            codeContent.textContent = code;
+        }
     };
 
     // Add copy code functionality
@@ -293,6 +677,89 @@
       URL.revokeObjectURL(url);
       log('Code downloaded', 'success');
     };
+
+    function showConfirmationDialog(data) {
+        const dialog = document.getElementById('confirmationDialog');
+        const title = document.getElementById('confirmationTitle');
+        const message = document.getElementById('confirmationMessage');
+        const details = document.getElementById('confirmationDetails');
+        const preview = document.getElementById('exportPreview');
+
+        title.textContent = 'Confirm Export to LaunchDarkly';
+        message.textContent = 'The following will be created in LaunchDarkly:';
+        
+        if (data.details) {
+            details.textContent = data.details;
+            details.style.display = 'block';
+        } else {
+            details.style.display = 'none';
+        }
+
+        if (data.preview) {
+            preview.innerHTML = data.preview.map(item => {
+                if (item.type === 'component-set') {
+                    return `
+                        <div class="preview-item">
+                            <strong>Feature Flag: ${item.name}</strong>
+                            <div class="variant-list">
+                                <strong>Variations:</strong>
+                                ${item.variants.map(variant => `
+                                    <div class="variant-item">• ${variant.name}</div>
+                                `).join('')}
+                            </div>
+                            <div class="metrics-list">
+                                <strong>Optional Metrics:</strong>
+                                ${item.metrics.map(metric => `
+                                    <div class="metric-item">
+                                        <input type="checkbox" class="metric-checkbox" id="metric-${metric.name}" checked>
+                                        <label class="metric-label" for="metric-${metric.name}">${metric.name}</label>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="preview-item">
+                            <strong>Feature Flag: ${item.name}</strong>
+                            <div class="metrics-list">
+                                <strong>Optional Metrics:</strong>
+                                ${item.metrics.map(metric => `
+                                    <div class="metric-item">
+                                        <input type="checkbox" class="metric-checkbox" id="metric-${metric.name}" checked>
+                                        <label class="metric-label" for="metric-${metric.name}">${metric.name}</label>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+
+        dialog.style.display = 'block';
+    }
+
+    function confirmExport() {
+        const dialog = document.getElementById('confirmationDialog');
+        const selectedMetrics = Array.from(dialog.querySelectorAll('.metric-checkbox:checked')).map(checkbox => checkbox.id.replace('metric-', ''));
+        
+        dialog.style.display = 'none';
+        parent.postMessage({ 
+            pluginMessage: { 
+                type: 'confirm-export',
+                selectedMetrics: selectedMetrics
+            }
+        }, '*');
+    }
+
+    function cancelExport() {
+        document.getElementById('confirmationDialog').style.display = 'none';
+        parent.postMessage({ pluginMessage: { type: 'cancel-export' } }, '*');
+    }
   </script>
 </body>
 </html> 

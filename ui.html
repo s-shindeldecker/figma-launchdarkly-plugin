@@ -310,7 +310,8 @@
         border-top: 1px solid #eee;
     }
 
-    .confirmation-dialog .metric-item {
+    .confirmation-dialog .metric-item,
+    .confirmation-dialog .flag-item {
         color: #666;
         margin: 8px 0;
         font-size: 14px;
@@ -320,12 +321,21 @@
         gap: 8px;
     }
 
-    .confirmation-dialog .metric-checkbox {
+    .confirmation-dialog .metric-checkbox,
+    .confirmation-dialog .flag-checkbox {
         margin: 0;
     }
 
-    .confirmation-dialog .metric-label {
+    .confirmation-dialog .metric-label,
+    .confirmation-dialog .flag-label {
         flex: 1;
+    }
+    
+    .confirmation-dialog .flag-option {
+        margin-top: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #eee;
     }
 
     .confirmation-dialog .button-group {
@@ -592,7 +602,20 @@
                     }
                 }, '*');
             }
-        } else if (msg.type === 'show-confirmation' || msg.type === 'show-export-preview') {
+        } else if (msg.type === 'show-confirmation') {
+            log('Received show-confirmation message', 'info');
+            if (msg.title && msg.message && msg.details) {
+                showConfirmationDialog({
+                    title: msg.title,
+                    message: msg.message,
+                    details: msg.details,
+                    component: msg.data?.component
+                });
+            } else {
+                showConfirmationDialog(msg.data);
+            }
+        } else if (msg.type === 'show-export-preview') {
+            log('Received show-export-preview message', 'info');
             showConfirmationDialog(msg.data);
         } else if (msg.type === 'debug') {
             log(msg.message, msg.level || 'info');
@@ -631,8 +654,8 @@
             updateUIState();
         } else if (msg.type === 'process-component') {
             const { name, variants, code } = msg.data;
-            log(`Processing component: ${name}`);
-            log(`Found ${variants.length} variants`);
+            log(`Processing component: ${name}`, 'info');
+            log(`Found ${variants.length} variants`, 'info');
             
             const variantsList = document.getElementById('variantsList');
             variantsList.innerHTML = `
@@ -645,11 +668,43 @@
                 `).join('')}
             `;
 
-            // Show and populate code section
-            const codeSection = document.getElementById('codeSection');
-            const codeContent = document.getElementById('codeContent');
-            codeSection.style.display = 'block';
-            codeContent.textContent = code;
+            // Show and populate code section if code is provided
+            if (code) {
+                const codeSection = document.getElementById('codeSection');
+                const codeContent = document.getElementById('codeContent');
+                codeSection.style.display = 'block';
+                codeContent.textContent = code;
+            }
+        } else if (msg.type === 'export-complete') {
+            log('Export completed successfully', 'success');
+            showStatus('apiKeyStatus', 'Export completed successfully!', 'success');
+            
+            // Hide confirmation dialog if it's still open
+            document.getElementById('confirmationDialog').style.display = 'none';
+            
+            // Show success message
+            const variantsList = document.getElementById('variantsList');
+            variantsList.innerHTML = `
+                <div class="variant-item" style="background-color: #e8f5e9; border-color: #2e7d32;">
+                    <strong>Export Successful!</strong>
+                    <p>The feature flag and metrics have been created in LaunchDarkly.</p>
+                </div>
+            `;
+        } else if (msg.type === 'export-error') {
+            log(`Export error: ${msg.message}`, 'error');
+            showStatus('apiKeyStatus', `Export error: ${msg.message}`, 'error');
+            
+            // Hide confirmation dialog if it's still open
+            document.getElementById('confirmationDialog').style.display = 'none';
+            
+            // Show error message
+            const variantsList = document.getElementById('variantsList');
+            variantsList.innerHTML = `
+                <div class="variant-item" style="background-color: #ffebee; border-color: #d32f2f;">
+                    <strong>Export Failed</strong>
+                    <p>${msg.message}</p>
+                </div>
+            `;
         }
     };
 
@@ -701,6 +756,12 @@
                     return `
                         <div class="preview-item">
                             <strong>Feature Flag: ${item.name}</strong>
+                            <div class="flag-option">
+                                <div class="flag-item">
+                                    <input type="checkbox" class="flag-checkbox" id="flag-${item.name}" checked>
+                                    <label class="flag-label" for="flag-${item.name}">Export Feature Flag</label>
+                                </div>
+                            </div>
                             <div class="variant-list">
                                 <strong>Variations:</strong>
                                 ${item.variants.map(variant => `
@@ -722,6 +783,12 @@
                     return `
                         <div class="preview-item">
                             <strong>Feature Flag: ${item.name}</strong>
+                            <div class="flag-option">
+                                <div class="flag-item">
+                                    <input type="checkbox" class="flag-checkbox" id="flag-${item.name}" checked>
+                                    <label class="flag-label" for="flag-${item.name}">Export Feature Flag</label>
+                                </div>
+                            </div>
                             <div class="metrics-list">
                                 <strong>Optional Metrics:</strong>
                                 ${item.metrics.map(metric => `
@@ -746,12 +813,17 @@
     function confirmExport() {
         const dialog = document.getElementById('confirmationDialog');
         const selectedMetrics = Array.from(dialog.querySelectorAll('.metric-checkbox:checked')).map(checkbox => checkbox.id.replace('metric-', ''));
+        const selectedFlags = Array.from(dialog.querySelectorAll('.flag-checkbox:checked')).map(checkbox => checkbox.id.replace('flag-', ''));
+        
+        log(`Selected metrics: ${selectedMetrics.join(', ')}`, 'info');
+        log(`Selected flags: ${selectedFlags.join(', ')}`, 'info');
         
         dialog.style.display = 'none';
         parent.postMessage({ 
             pluginMessage: { 
                 type: 'confirm-export',
-                selectedMetrics: selectedMetrics
+                selectedMetrics: selectedMetrics,
+                selectedFlags: selectedFlags
             }
         }, '*');
     }
@@ -762,4 +834,4 @@
     }
   </script>
 </body>
-</html> 
+</html>

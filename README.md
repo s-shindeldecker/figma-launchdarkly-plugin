@@ -1,116 +1,92 @@
 # Figma LaunchDarkly Plugin
 
-A Figma plugin that generates React components with LaunchDarkly feature flag integration. This plugin allows you to create feature flags directly from your Figma designs, making it easier to manage A/B tests and feature rollouts.
-
-## Prerequisites
-
-- Node.js v20 or higher
-- A LaunchDarkly account with API access
-- Figma desktop app
-
-## Development Setup
-
-1. Install dependencies:
-```bash
-npm install
-cd server && npm install
-```
-
-2. Build the plugin:
-```bash
-npm run build
-```
-
-3. Load the plugin in Figma:
-   - Open Figma
-   - Go to Plugins > Development > Import plugin from manifest...
-   - Select the `manifest.json` file
-
-## Server Management
-
-The plugin requires a local server to communicate with the LaunchDarkly API. Here's how to manage it:
-
-### Starting the Server
-
-1. Navigate to the server directory:
-```bash
-cd server
-```
-
-2. Start the server (default port: 3002):
-```bash
-PORT=3002 node index.js
-```
-
-If you get an "address already in use" error, you can:
-- Use a different port: `PORT=3003 node index.js`
-- Find and stop the existing process: `lsof -i :3002` then `kill <PID>`
-
-### Stopping the Server
-
-- Press `Ctrl+C` in the terminal where the server is running
-- Or find and kill the process:
-```bash
-lsof -i :3002
-kill <PID>
-```
-
-## Using the Plugin
-
-1. **Select Components**:
-   - Open your Figma design
-   - Select the components you want to create feature flags for
-   - Launch the plugin from Plugins > Development > Figma LaunchDarkly Plugin
-
-2. **Configure Feature Flag**:
-   - Enter your LaunchDarkly API key
-   - Select the target project
-   - Name your feature flag
-   - Add an optional description
-   - Choose whether to include metrics tracking
-
-3. **Create Variations**:
-   - The plugin automatically detects different variants of your selected components
-   - Each variant will be created as a distinct variation in LaunchDarkly
-   - You can modify variation names and values before creating the flag
-
-4. **Review and Create**:
-   - Review the confirmation dialog showing all flag details
-   - Click "Create Flag" to generate the feature flag in LaunchDarkly
-   - The plugin will provide feedback on the creation status
+This plugin allows you to export Figma components to LaunchDarkly as feature flags and metrics. It provides a simple interface for connecting to your LaunchDarkly account and exporting components with their variants.
 
 ## Features
 
-- Generate React components from Figma designs
-- Automatic LaunchDarkly feature flag integration
-- Consistent event tracking across variants
-- A/B testing support
-- Project selection and environment management
-- Optional metrics tracking
-- Distinct variation handling
-- Error handling and user feedback
+- Connect to your LaunchDarkly account using an API key
+- Select a project and environment
+- Export Figma components to LaunchDarkly as feature flags
+- Create metrics for each component variant
+- Generate React code for using the feature flags
+- Confirmation dialog before exporting to LaunchDarkly
+- Debug mode for troubleshooting
+
+## Setup
+
+1. Install the plugin in Figma:
+   - Go to Plugins > Development > Import plugin from manifest
+   - Select the `manifest.json` file from this directory
+
+2. Start the server:
+   ```bash
+   npm run safe-start-server
+   ```
+   This will automatically stop any existing server and start a new one.
+
+3. Open the plugin in Figma:
+   - Select a component or component set in Figma
+   - Right-click > Plugins > LaunchDarkly Plugin
+
+## Usage
+
+1. Enter your LaunchDarkly API key
+   - You can find your API key in LaunchDarkly under Account Settings > Authorization
+   - The key should start with "api-"
+
+2. Select a project and environment
+
+3. Select a component or component set in Figma
+   - Components are shown with a diamond icon in the Assets panel
+   - Component sets contain multiple variants
+
+4. Click "Export to LaunchDarkly"
+
+5. Review the confirmation dialog
+   - The dialog shows what will be created in LaunchDarkly
+   - You can select which metrics to create
+   - Click "Confirm Export" to proceed or "Cancel" to abort
+
+6. View the results
+   - The plugin will show a success message when the export is complete
+   - You can view the generated code and download it for use in your project
+
+## Server Management
+
+The plugin includes scripts for managing the server:
+
+- `npm run start-server`: Start the server
+- `npm run stop-server`: Stop the server interactively
+- `npm run stop-server-auto`: Stop the server automatically
+- `npm run restart-server`: Restart the server
+- `npm run safe-start-server`: Stop any existing server and start a new one
+
+For more details, see [SERVER_MANAGEMENT.md](./SERVER_MANAGEMENT.md).
 
 ## Troubleshooting
 
-1. **Server Connection Issues**:
-   - Ensure the server is running on the correct port
-   - Check that your API key is valid
-   - Verify network connectivity
+If you encounter issues:
 
-2. **Feature Flag Creation Errors**:
-   - Ensure variations are distinct
-   - Check that the flag key is unique
-   - Verify project permissions
+1. Enable Debug Mode in the plugin UI to see detailed logs
+2. Check if the server is running (`npm run safe-start-server`)
+3. Make sure your LaunchDarkly API key is correct
+4. Ensure you have selected a valid component or component set
+5. Check the browser console for any JavaScript errors
 
-3. **Plugin Loading Issues**:
-   - Rebuild the plugin: `npm run build`
-   - Reload the plugin in Figma
-   - Check the browser console for errors
+## Development
 
-## Contributing
+This plugin consists of:
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+- `code.js`: The main plugin code that runs in Figma
+- `ui.html`: The UI code that runs in the plugin window
+- `server/`: The proxy server that handles API requests to LaunchDarkly
+
+To modify the plugin:
+
+1. Edit the files as needed
+2. Restart the server if you made changes to the server code
+3. Reload the plugin in Figma (Right-click > Plugins > Development > Reload Plugin)
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+ISC

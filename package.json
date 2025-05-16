@@ -5,9 +5,13 @@
   "main": "code.js",
   "scripts": {
     "start-server": "cd server && npm install && PORT=3002 node index.js",
-    "dev-server": "cd server && npm install && PORT=3002 nodemon index.js"
+    "dev-server": "cd server && npm install && PORT=3002 nodemon index.js",
+    "stop-server": "node stop-server.js",
+    "stop-server-auto": "node stop-server-auto.js",
+    "restart-server": "npm run stop-server-auto && npm run start-server",
+    "safe-start-server": "npm run stop-server-auto && npm run start-server"
   },
   "keywords": [],
   "author": "",
   "license": "ISC"
-} 
+}
